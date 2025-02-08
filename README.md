@@ -1,23 +1,21 @@
 <!-- PROJECT LOGO -->
 <div align="center">
 
-# Hydride
+![banner (1)](https://github.com/user-attachments/assets/b80c3ebc-78ca-4261-9ee9-7e994f6ccfc3)
 
   <a style="text-decoration:none">
     <img src="https://img.shields.io/github/downloads/rohankishore/Hydride/total.svg"/>
   </a>  <a href='https://ko-fi.com/V7V7QZ7GS' target='_blank'><img height='10' style='border:0px;height:22px;' src='https://storage.ko-fi.com/cdn/kofi5.png?v=3' border='1' alt='Buy Me a Coffee at ko-fi.com' /></a>
       
   <p align="center">
-    Hydride is an PYQ practice app for JEE, KEAM, etc.
+    Hydride is a PYQ practice app for JEE, KEAM, etc. made using Python and PyQt6
     <br />
-    <a href="https://github.com/rohankishore/Aura-Text/wiki"><strong>Explore the docs »</strong></a>   
+    <a href="https://github.com/rohankishore/Hydride/wiki"><strong>Explore the docs »</strong></a>   
     <br />
     <br />
-    <a href="https://github.com/rohankishore/Aura-Text/issues">Report Bug</a>
+    <a href="https://github.com/rohankishore/Hydride/issues">Report Bug</a>
     ·   
-    <a href="https://github.com/rohankishore/Aura-Text/issues/new?assignees=&labels=&projects=&template=feature_request.md&title=">Request Feature</a>
-
-  *Aura Text is also being ported to macOS by [matthewyang204](https://github.com/matthewyang204). Take a look at the repository [here](https://github.com/matthewyang204/Aura-Text-Mac)*
+    <a href="https://github.com/rohankishore/Hydride/issues/new?assignees=&labels=&projects=&template=feature_request.md&title=">Request Feature</a>
   </p>
 </div>    
 
@@ -50,99 +48,46 @@
   </ol>
 </details>
 
-<!-- LANGUAGE SWITCHER -->
-<details>
-  <summary>View the README In:</summary>
-  <ol>
-    <li>    
-      <a href="translate/README_HN.md">Hindi 🇮🇳</a>
-    </li>
-    <li>
-      <a href="translate/README_DE.md">German</a>
-    </li>
-    <li><a href="translate/README_ES.md">Español</a></li>
-    <li><a href="#-contributing">Russian</a></li>
-    <li><a href="translate/ZH-CN/README_ZH-CN.md">简体中文</a></li>
-  </ol>
-</details>
-
 <br>
 <hr>
 
 <!-- ABOUT THE PROJECT -->
 ## 📖 About The Project
 
-![image](https://github.com/user-attachments/assets/360d1ce8-5047-4534-8b84-b01ecc670725)
+![image](https://github.com/user-attachments/assets/9e1b18fd-f8bf-489f-b672-57f647ed0082)
 
-![image](https://github.com/user-attachments/assets/fca92d3e-4218-4550-96ca-dfa85dbc27dc)
+![image](https://github.com/user-attachments/assets/57ed33cf-a0e5-4df5-9afc-212edc9125dc)
 
-Aura Text is an excellent text/code editor that offers a wide array of essential tools. Built with PyQt6 and Python, it harnesses the power and flexibility of these technologies.
+Hydride is an PYQ practice + prep app for Windows/Mac using Python and PyQt6. It is completely free of cost to use any of its features (as of now).
 
-With Aura Text, users can access a versatile and powerful editing environment. Whether working on a small script or a complex project, Aura Text equips you with all the necessary features to streamline your workflow. From syntax highlighting and code completion to smart indentation and advanced terminal, Aura Text ensures that your coding experience is efficient and enjoyable while being extremely light on your PC.
+With Hydride, students can access a wide range of PYQs from exams like JEE, KEAM, etc and short notes / formula cards / materials which is made available to them.
 
 <br>
 
 
-***The main highlights of Aura Text are:***
-- Edit files (duh)
-- Support up to 30 languages
-- Autocompletion
-- Git clone
-- Git Commit and Push
-- Custom title bars
-- Split pane Markdown editor
-- Terminal with history
-- Python Console
-- Plugin support
-- Extensive theming including Material Theming support
-- Extremely customisable
+***The main highlights of Hydride are:***
+- Chapterwise PYQs
+- Short notes
+- Library (materials from around the internet)
+- Adding flashcards for quick revision
+- Notebooks (BETA)
   
 <!-- GETTING STARTED -->
 ## 🏃 Getting Started
 
-Let's set up Aura Text on your PC!
+Let's set up Hydride on your PC!
 
-### Prerequisites
-
-Run this command in your terminal to install the dependencies at once
-  ```sh
-  pip install -r requirements.txt
-  ```
-
-### Installation
-
-#### With Nuitka
-
-_Below is an example of how you can build Aura Text using Nuitka_
-
-- Download / Clone this repository
-- Move the `AuraText` folder in the `LocalAppData` folder to the `AppData/Local` folder.
-- Install Nuitka (`python -m pip install nuitka`)
-- `python -m nuitka --windows-disable-console .\main.py`
-
-#### 🐍 As a Python File
-
-- Download / Clone this repository
-- Move the `AuraText` folder in the `LocalAppData` folder to the `AppData/Local` folder.
-- `python -m main.py`
-
-<br>
-
-## 🧑🏻‍💻 Development 
-
-![Alt](https://repobeats.axiom.co/api/embed/c478f91eea3690c7415f891646a2a15a62b4fb20.svg "Repobeats analytics image")
-
+- Head over to the Releases page and download the ZIP file from the latest available version
+- Extract the ZIP file
+- Run `Hydride.exe`
+- Happy Solving!
 
 <br>
 
 ## 🛣️ Roadmap
-
-- <strike> Make a status bar at the bottom with features similar to PyCharm or other IDEs (Read-only toggle, breadcrumbs, etc) </strike>
-- <strike> Custom Theming </strike>
--  <strike> Key Emulation </strike>
-- Split Editing
-- Project Manager
-- <strike> Python Code Linting </strike>
+- Tests
+- PYP mocks
+- DPPs
 
 <b> and much much more... </b>
 
@@ -165,8 +110,8 @@ Don't forget to give the project a star! Thanks again!
 
 ### Contributors
 
-<a href="https://github.com/rohankishore/Aura-Text/graphs/contributors">
-  <img class="dark-light" src="https://contrib.rocks/image?repo=rohankishore/Aura-Text&anon=0&columns=25&max=100&r=true" />
+<a href="https://github.com/rohankishore/Hydride/graphs/contributors">
+  <img class="dark-light" src="https://contrib.rocks/image?repo=rohankishore/Hydride&anon=0&columns=25&max=100&r=true" />
 </a>
 
 <b>
@@ -174,5 +119,5 @@ Don't forget to give the project a star! Thanks again!
 <!-- LICENSE -->
 ## 🪪 License
 
-Distributed under the MIT License. See `LICENSE.txt` for more information.
+Distributed under the GPL v2 License. See `LICENSE.txt` for more information.
 
