@@ -1,27 +1,12 @@
-# coding:utf-8
 import json
 import os
 
-# import qdarktheme
-
-with open("resources/data/json/init.json", "r") as config_file:
-    _config = json.load(config_file)
-
-name = _config["name"]
-field = _config["field"]
-
-# coding:utf-8
-import json
-
-# import qdarktheme
-
-with open("resources/data/json/init.json", "r") as config_file:
-    _config = json.load(config_file)
-
-name = _config["name"]
-field = _config["field"]
-
-import json
+from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtGui import QFont, QColor, QPalette, QBrush, QIcon, QLinearGradient
+from PyQt6.QtWidgets import (
+    QWidget, QVBoxLayout, QLabel, QPushButton, QScrollArea, QHBoxLayout,
+    QSpacerItem, QSizePolicy, QStackedWidget
+)
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QFont, QLinearGradient, QColor, QPalette, QBrush, QIcon
 from PyQt6.QtWidgets import (
@@ -29,8 +14,6 @@ from PyQt6.QtWidgets import (
     QScrollArea, QLabel
 )
 from qfluentwidgets import LargeTitleLabel, CaptionLabel
-
-# import qdarktheme
 
 with open("resources/data/json/init.json", "r") as config_file:
     _config = json.load(config_file)
@@ -77,18 +60,61 @@ class SubjectContentWindow(QWidget):
         self.parent_widget.show()  # Show the parent widget (Dashboard) again
 
 
+class KeamContentWidget(QWidget):
+    def __init__(self, go_back_callback):
+        """
+        A widget displaying KEAM content with a back button.
+
+        :param go_back_callback: Function to call when the back button is clicked.
+        """
+        super().__init__()
+
+        # Layout setup
+        self.layout = QVBoxLayout(self)
+        self.layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        # KEAM Content Label
+        keam_label = QLabel("Welcome to KEAM Content!", self)
+        keam_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        keam_label.setFont(QFont("Poppins", 18, QFont.Weight.Bold))
+        keam_label.setStyleSheet("color: white;")
+        self.layout.addWidget(keam_label)
+
+        # Back Button
+        back_button = QPushButton("Back to Home", self)
+        back_button.setFixedSize(QSize(150, 50))
+        back_button.setFont(QFont("Poppins", 12, QFont.Weight.Bold))
+        back_button.setStyleSheet("""
+            QPushButton {
+                background-color: #222d3f;
+                color: white;
+                border-radius: 10px;
+                padding: 10px;
+            }
+            QPushButton:hover {
+                border: 2px solid #007BFF;
+            }
+        """)
+        back_button.clicked.connect(go_back_callback)
+        self.layout.addWidget(back_button, alignment=Qt.AlignmentFlag.AlignBottom)
+
+
 class DashboardWidget(QWidget):
-    def __init__(self):
+    def __init__(self, parent=None):
         super().__init__()
         self.setMinimumSize(800, 600)
         self.spacer_item = QSpacerItem(30, 40)
         self.spacer_item_small = QSpacerItem(10, 10)
+        self.parent_stack = parent
 
         # Set gradient background
         palette = QPalette()
         gradient = QLinearGradient(0, 0, 0, self.height())
-        gradient.setColorAt(0.0, QColor("#202020"))
-        gradient.setColorAt(1.0, QColor("#202020"))
+        gradient.setColorAt(0.0, QColor("#272727"))
+        gradient.setColorAt(1.0, QColor("#272727"))
+        gradient.setColorAt(2.0, QColor("#202027"))
+        gradient.setColorAt(3.0, QColor("#202020"))
+
         palette.setBrush(QPalette.ColorRole.Window, QBrush(gradient))
         self.setPalette(palette)
         self.setAutoFillBackground(True)
@@ -99,7 +125,7 @@ class DashboardWidget(QWidget):
 
         # ======== Greeting Bar (Fixed) ========
         self.greeting_bar = QWidget()
-        self.greeting_bar.setStyleSheet("background-color: #202020;")
+        self.greeting_bar.setStyleSheet("background-color: #272727;")
         self.greeting_bar.setFixedHeight(120)
         self.greeting_bar_layout = QVBoxLayout(self.greeting_bar)
         self.greeting_bar_layout.setContentsMargins(0, 0, 0, 0)
@@ -155,7 +181,7 @@ class DashboardWidget(QWidget):
         self.jee_button = self.create_button("JEE", "resources/icons/icon/JEE.png")
         self.neet_button = self.create_button("NEET", "resources/icons/icon/NEET.png")
         self.keam_button = self.create_button("KEAM", "resources/icons/icon/KEAM.png")
-        self.keam_button.clicked.connect(self.showKeamContent)
+        self.keam_button.clicked.connect(lambda: self.parent_stack.switch_to_widget(self.parent_stack.page2))
         self.test2 = self.create_button("NEET", "resources/icons/icon/NEET.png")
         self.test3 = self.create_button("NEET", "resources/icons/icon/NEET.png")
 
@@ -372,3 +398,59 @@ class DashboardWidget(QWidget):
                 }
             """)
         return button
+
+
+class StackableWidget(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        self.layout = QVBoxLayout()
+        self.stacked_widget = QStackedWidget()
+        self.history = []  # Stack to track previous widgets
+
+        self.setObjectName("testhome")
+
+        # Create pages
+        self.page1 = QWidget()
+        self.page2 = QWidget()
+
+        # Page 1 layout
+        layout1 = QVBoxLayout()
+        self.home = DashboardWidget(self)
+        layout1.addWidget(self.home)
+        self.page1.setLayout(layout1)
+
+        # Page 2 layout
+        layout2 = QVBoxLayout()
+        layout2.addWidget(QLabel("This is Page 2"))
+        self.keam_widget = KeamContentWidget(self.go_back)
+        btn_to_page1 = QPushButton("Go to Page 1")
+        btn_to_page1.clicked.connect(self.go_back)
+        layout2.addWidget(self.keam_widget)
+        layout2.addWidget(btn_to_page1)
+        self.page2.setLayout(layout2)
+
+        # Add pages to stacked widget
+        self.stacked_widget.addWidget(self.page1)
+        self.stacked_widget.addWidget(self.page2)
+
+        self.layout.addWidget(self.stacked_widget)
+        self.setLayout(self.layout)
+
+    def showKeamContent(self):
+        self.stacked_widget.setCurrentWidget(self.keam_widget)
+
+    def switch_to_widget(self, widget):
+        """Switches to the given widget and stores the previous one."""
+        current_widget = self.stacked_widget.currentWidget()
+        if current_widget:
+            self.history.append(current_widget)
+        if self.stacked_widget.indexOf(widget) == -1:
+            self.stacked_widget.addWidget(widget)  # Add if not already in stack
+        self.stacked_widget.setCurrentWidget(widget)
+
+    def go_back(self):
+        """Goes back to the last visited widget if possible."""
+        if self.history:
+            last_widget = self.history.pop()
+            self.stacked_widget.setCurrentWidget(last_widget)

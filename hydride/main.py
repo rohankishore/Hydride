@@ -1,6 +1,6 @@
 import json
 
-from hydride.core import window
+import testnav as window
 # coding:utf-8
 import sys
 # import qdarktheme
@@ -14,9 +14,9 @@ if __name__ == '__main__':
         w = window.Window()
         w.show()
     else:
-        onboarding_dialog = window.OnboardingScreen()
-        onboarding_dialog.exec()
-        w = Window()
+        #onboarding_dialog = window.OnboardingScreen()
+        #onboarding_dialog.exec()
+        w = window.Window()
         w.show()
 
     app.exec()

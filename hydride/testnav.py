@@ -13,7 +13,8 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QLinearGradient, QColor, QPalette, QBrush
 from PyQt6.QtWidgets import QLabel, QHBoxLayout, QWidget
 import json
-import onboarding, home, flashcard
+import onboarding, flashcard
+import testhome as home
 
 CONFIG_FILE = "resources/data/json/init.json"
 
@@ -22,17 +23,6 @@ with open(CONFIG_FILE, "r") as config_file:
 
 name = _config["name"]
 field = _config["field"]
-
-def load_config():
-    try:
-        with open(CONFIG_FILE, "r") as file:
-            return json.load(file)
-    except FileNotFoundError:
-        return {"onboarding": False, "name": "", "field": ""}
-
-def save_config(data):
-    with open(CONFIG_FILE, "w") as file:
-        json.dump(data, file, indent=4)
 
 
 class Widget(QWidget):
@@ -126,7 +116,7 @@ class Window(FramelessWindow):
 
         setTheme(Theme.DARK)
 
-        self.homeInterface = home.DashboardWidget()
+        self.homeInterface = home.StackableWidget()
         self.appInterface = Widget('Test Interface', self)
         self.videoInterface = Widget('Notebook Interface', self)
         self.flashcardInterface = flashcard.FlashcardWidget()
@@ -152,13 +142,14 @@ class Window(FramelessWindow):
         self.addSubInterface(self.homeInterface, FIF.HOME, 'Home', selectedIcon=FIF.HOME_FILL)
         self.addSubInterface(self.appInterface, FIF.PENCIL_INK, 'Tests')
         self.addSubInterface(self.videoInterface, FIF.BOOK_SHELF, 'Notebooks', selectedIcon=FIF.LIBRARY_FILL)
-        self.addSubInterface(self.flashcardInterface, QIcon("resources/icons/icon/flashcards.png"), 'Flashcards', NavigationItemPosition.BOTTOM,
+        self.addSubInterface(self.flashcardInterface, QIcon("resources/icons/icon/flashcards.png"), 'Flashcards',
+                             NavigationItemPosition.BOTTOM,
                              QIcon("resources/icons/icon/flashcards.png"))
         self.stackWidget.currentChanged.connect(self.onCurrentInterfaceChanged)
         self.navigationBar.setCurrentItem(self.homeInterface.objectName())
 
     def initWindow(self):
-        #self.resize(900, 700)
+        # self.resize(900, 700)
         self.showMaximized()
         self.setWindowTitle('Hydride')
         setTheme(Theme.DARK)
