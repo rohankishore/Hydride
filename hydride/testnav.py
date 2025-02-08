@@ -120,6 +120,7 @@ class Window(FramelessWindow):
         self.appInterface = Widget('Test Interface', self)
         self.videoInterface = Widget('Notebook Interface', self)
         self.flashcardInterface = flashcard.FlashcardWidget()
+        self.libraryInterface = flashcard.testLibWidget()
 
         self.initLayout()
         self.initNavigation()
@@ -145,11 +146,16 @@ class Window(FramelessWindow):
         self.addSubInterface(self.flashcardInterface, QIcon("resources/icons/icon/flashcards.png"), 'Flashcards',
                              NavigationItemPosition.BOTTOM,
                              QIcon("resources/icons/icon/flashcards.png"))
+
+        self.addSubInterface(self.libraryInterface, FIF.BOOK_SHELF, 'Library',
+                             NavigationItemPosition.BOTTOM,
+                             FIF.BOOK_SHELF)
         self.stackWidget.currentChanged.connect(self.onCurrentInterfaceChanged)
         self.navigationBar.setCurrentItem(self.homeInterface.objectName())
 
     def initWindow(self):
         # self.resize(900, 700)
+        self.setWindowIcon(QIcon("resources/icons/icon/icon.png"))
         self.showMaximized()
         self.setWindowTitle('Hydride')
         setTheme(Theme.DARK)

@@ -1,17 +1,14 @@
 import json
 import os
 
-from PyQt6.QtCore import Qt, QSize
-from PyQt6.QtGui import QFont, QColor, QPalette, QBrush, QIcon, QLinearGradient
-from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QLabel, QPushButton, QScrollArea, QHBoxLayout,
-    QSpacerItem, QSizePolicy, QStackedWidget
-)
-from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtCore import Qt, QSize, QTimer
 from PyQt6.QtGui import QFont, QLinearGradient, QColor, QPalette, QBrush, QIcon
 from PyQt6.QtWidgets import (
     QHBoxLayout, QVBoxLayout, QWidget, QPushButton, QSpacerItem, QSizePolicy,
     QScrollArea, QLabel
+)
+from PyQt6.QtWidgets import (
+    QStackedWidget, QListWidget
 )
 from qfluentwidgets import LargeTitleLabel, CaptionLabel
 
@@ -60,25 +57,574 @@ class SubjectContentWindow(QWidget):
         self.parent_widget.show()  # Show the parent widget (Dashboard) again
 
 
-class KeamContentWidget(QWidget):
-    def __init__(self, go_back_callback):
-        """
-        A widget displaying KEAM content with a back button.
+import json
 
+
+class QuestionListWidget(QWidget):
+    def __init__(self, stack_widget):
+        super().__init__()
+        self.stack_widget = stack_widget
+
+        layout = QVBoxLayout(self)
+        layout.setSpacing(15)
+        layout.setContentsMargins(40, 20, 40, 20)
+
+        self.title_label = QLabel("")
+        self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.title_label.setFont(QFont("Poppins", 24, QFont.Weight.Bold))
+        self.title_label.setStyleSheet("color: #ffffff; padding: 10px;")
+        layout.addWidget(self.title_label)
+
+        self.list_widget = QListWidget()
+        self.list_widget.setStyleSheet("""
+            QListWidget {
+                background-color: #222d3f;
+                color: white;
+                border-radius: 10px;
+                padding: 10px;
+            }
+            QListWidget::item {
+                padding: 10px;
+            }
+            QListWidget::item:hover {
+                background-color: #007BFF;
+            }
+        """)
+        self.list_widget.itemClicked.connect(self.open_quiz)
+        layout.addWidget(self.list_widget)
+
+        self.setLayout(layout)
+
+    def load_questions(self, chapter_name):
+        """Loads questions from the JSON file and updates QuizWidget."""
+        filename = f"resources/chapters/{chapter_name.replace(' ', '_')}.json"
+        print(f"Loading questions from: {filename}")
+
+        try:
+            with open(filename, "r") as file:
+                data = json.load(file)
+
+                if not isinstance(data, list):
+                    raise ValueError("Invalid JSON format: Expected a list")
+
+                valid_questions = [entry["question"] for entry in data if "question" in entry]
+
+                print(f"✅ Loaded {len(valid_questions)} valid questions.")
+
+                # 🔥 Ensure we are setting questions in the correct QuizWidget index
+                quiz_widget_index = 6  # Change this if needed
+                quiz_widget = self.stack_widget.widget(quiz_widget_index)
+                quiz_widget.questions = valid_questions  # Store the questions
+
+                print(f"✅ Stored {len(quiz_widget.questions)} questions in QuizWidget (index {quiz_widget_index})")
+
+                # Populate list widget
+                self.list_widget.clear()
+                for i, question in enumerate(valid_questions, 1):
+                    self.list_widget.addItem(f"{i}. {question['content']}")
+
+        except Exception as e:
+            print("❌ Error loading questions:", e)
+            self.list_widget.clear()
+            self.list_widget.addItem("No questions available.")
+
+    def open_quiz(self, item):
+        """Opens the quiz window with the selected question."""
+        try:
+            question_index = self.list_widget.row(item)
+            print(f"Clicked question index: {question_index}")
+
+            # Debugging: Print available questions
+            print(f"Available questions in QuizWidget: {len(self.stack_widget.widget(6).questions)}")
+
+            # Ensure questions are loaded before switching
+            if 0 <= question_index < len(self.stack_widget.widget(6).questions):
+                self.stack_widget.setCurrentIndex(6)  # Switch to QuizWidget
+                self.stack_widget.widget(6).load_question(question_index)
+            else:
+                print("Error: Index out of range!")
+
+        except Exception as e:
+            print("Error opening quiz:", e)
+
+
+class QuizWidget(QWidget):
+    def __init__(self, stack_widget):
+        super().__init__()
+        self.stack_widget = stack_widget
+        self.current_question_index = 0
+        self.questions = []
+        self.selected_option = None
+
+        layout = QVBoxLayout(self)
+        layout.setSpacing(15)
+        layout.setContentsMargins(40, 20, 40, 20)
+
+        # Question Label
+        self.question_label = QLabel()
+        self.question_label.setWordWrap(True)
+        self.question_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.question_label.setFont(QFont("Poppins", 14, QFont.Weight.Bold))
+        self.question_label.setStyleSheet("color: white; background: #222d3f; padding: 15px; border-radius: 10px;")
+        self.question_label.setTextFormat(Qt.TextFormat.RichText)
+        layout.addWidget(self.question_label)
+
+        # Options List
+        self.option_list = QListWidget()
+        self.option_list.setStyleSheet("""
+            QListWidget {
+                background-color: #222d3f;
+                color: white;
+                border-radius: 10px;
+                padding: 10px;
+            }
+            QListWidget::item {
+                padding: 10px;
+            }
+            QListWidget::item:hover {
+                background-color: #007BFF;
+            }
+        """)
+
+        self.option_list.itemClicked.connect(self.store_selected_option)
+        layout.addWidget(self.option_list)
+
+        # Feedback Label
+        self.feedback_label = QLabel("")
+        self.feedback_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.feedback_label.setFont(QFont("Poppins", 12, QFont.Weight.Medium))
+        self.feedback_label.setStyleSheet("color: white; padding: 5px;")
+        self.feedback_label.setFixedHeight(40)  # Ensure visibility
+        layout.addWidget(self.feedback_label)
+
+        # Navigation Buttons
+        nav_layout = QHBoxLayout()
+        self.prev_button = QPushButton("⬅️ Previous")
+        self.next_button = QPushButton("Next ➡️")
+
+        self.prev_button.clicked.connect(self.previous_question)
+        self.next_button.clicked.connect(self.check_answer_and_next)
+
+        nav_layout.addWidget(self.prev_button)
+        nav_layout.addWidget(self.next_button)
+        layout.addLayout(nav_layout)
+
+        # 🔥 Back to Chapter Selection Button
+        self.back_button = QPushButton("🔙 Back")
+        self.back_button.setFixedSize(QSize(250, 50))
+        self.back_button.setFont(QFont("Poppins", 12, QFont.Weight.Bold))
+        self.back_button.setStyleSheet("""
+            QPushButton {
+                background-color: #222d3f;
+                color: white;
+                border-radius: 10px;
+                padding: 10px;
+            }
+            QPushButton:hover {
+                border: 2px solid #007BFF;
+            }
+        """)
+        self.back_button.clicked.connect(self.go_back_to_chapters)
+        layout.addWidget(self.back_button, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        self.setLayout(layout)
+
+    def go_back_to_chapters(self):
+        """Returns to the chapter selection screen."""
+        self.stack_widget.setCurrentIndex(5)  # Ensure 5 is the QuestionListWidget index
+
+    def store_selected_option(self, item):
+        """Stores the selected option."""
+        self.selected_option = item.text().split(".")[0]  # Extract the option identifier (A, B, C, etc.)
+        print(f"Selected answer: {self.selected_option}")  # Debugging
+
+    def check_answer_and_next(self):
+        """First click shows answer feedback, second click moves to the next question."""
+        if not self.questions:
+            return
+
+        correct_answers = self.questions[self.current_question_index]["correct_options"]
+
+        # Step 1: Show feedback if not already shown
+        if self.feedback_label.text() == "":
+            if self.selected_option:  # Only show feedback if an option was chosen
+                if self.selected_option in correct_answers:
+                    self.feedback_label.setText("✅ Correct!")
+                    self.feedback_label.setStyleSheet("color: #00FF00; padding: 5px;")
+                else:
+                    correct_text = ", ".join(correct_answers) if correct_answers else "None"
+                    self.feedback_label.setText(f"❌ Incorrect! Correct answer: {correct_text}")
+                    self.feedback_label.setStyleSheet("color: #FF4444; padding: 5px;")
+
+            return  # Stops here to allow feedback before moving forward
+
+        # Step 2: Move to the next question on second click
+        self.feedback_label.setText("")  # Reset feedback
+        if self.current_question_index < len(self.questions) - 1:
+            self.next_question()
+
+    def load_question(self, index):
+        """Loads a question based on the index."""
+        if not self.questions:
+            self.question_label.setText("No questions available.")
+            return
+
+        self.current_question_index = index
+        question_data = self.questions[self.current_question_index]
+
+        formatted_question = question_data["content"].replace("$", "<sup>").replace("$", "</sup>")
+        self.question_label.setText(formatted_question)
+
+        self.option_list.clear()
+        self.selected_option = None  # Reset selection
+        for option in question_data["options"]:
+            formatted_option = f"{option['identifier']}. {option['content']}".replace("$", "<sup>").replace("$",
+                                                                                                            "</sup>")
+            self.option_list.addItem(formatted_option)
+
+        self.feedback_label.setText("")  # Reset feedback
+
+        # 🔥 Keep Next button enabled even on the last question
+        self.prev_button.setEnabled(self.current_question_index > 0)
+        self.next_button.setEnabled(True)  # Always enabled to allow skipping
+
+    def next_question(self):
+        """Moves to the next question."""
+        if self.current_question_index < len(self.questions) - 1:
+            self.load_question(self.current_question_index + 1)
+
+    def previous_question(self):
+        """Moves to the previous question."""
+        if self.current_question_index > 0:
+            self.load_question(self.current_question_index - 1)
+
+
+class PhysicsWidget(QWidget):
+    def __init__(self, stack_widget):
+        super().__init__()
+        self.stack_widget = stack_widget
+
+        layout = QVBoxLayout(self)
+        layout.setSpacing(15)
+        layout.setContentsMargins(40, 20, 40, 20)
+
+        title_label = QLabel("📘 Physics Chapters")
+        caption_label = QLabel("28 Chapters | 14 11th | 14 12th")
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        caption_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title_label.setFont(QFont("Poppins", 24, QFont.Weight.Bold))
+        caption_label.setFont(QFont("Poppins", 14, QFont.Weight.DemiBold))
+        title_label.setStyleSheet("color: #ffffff; padding: 10px;")
+        caption_label.setStyleSheet("color: #ffffff; padding: 10px;")
+        layout.addWidget(title_label)
+        layout.addWidget(caption_label)
+
+        scroll_area = QScrollArea(self)
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setStyleSheet("border: none; background: transparent;")
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+
+        scroll_widget = QWidget()
+        scroll_layout = QVBoxLayout(scroll_widget)
+        scroll_layout.setSpacing(10)
+
+        chapters = [
+            "Units and Measurements", "Motion in a Straight Line", "Motion in a Plane",
+            "Laws of Motion", "Work, Energy, and Power", "System of Particles and Rotational Motion",
+            "Gravitation", "Mechanical Properties of Solids", "Mechanical Properties of Fluids",
+            "Thermal Properties of Matter", "Thermodynamics", "Kinetic Theory",
+            "Oscillations", "Waves"
+        ]
+
+        for chapter in chapters:
+            chapter_button = QPushButton(chapter)
+            chapter_button.setFixedHeight(60)
+            chapter_button.setFont(QFont("Poppins", 14, QFont.Weight.Medium))
+            chapter_button.setStyleSheet("""
+                QPushButton {
+                    background-color: #222d3f;
+                    color: white;
+                    border-radius: 15px;
+                    padding: 10px;
+                    text-align: left;
+                }
+                QPushButton:hover {
+                    background-color: #007BFF;
+                    color: white;
+                }
+            """)
+            chapter_button.clicked.connect(lambda _, ch=chapter: self.open_question_list(ch))
+            scroll_layout.addWidget(chapter_button)
+
+        scroll_widget.setLayout(scroll_layout)
+        scroll_area.setWidget(scroll_widget)
+        layout.addWidget(scroll_area)
+
+        back_button = QPushButton("⬅️ Back to KEAM", self)
+        back_button.setFixedSize(QSize(200, 50))
+        back_button.setFont(QFont("Poppins", 12, QFont.Weight.Bold))
+        back_button.setStyleSheet("""
+            QPushButton {
+                background-color: #222d3f;
+                color: white;
+                border-radius: 10px;
+                padding: 10px;
+            }
+            QPushButton:hover {
+                border: 2px solid #007BFF;
+            }
+        """)
+        back_button.clicked.connect(lambda: self.stack_widget.setCurrentIndex(1))
+        layout.addWidget(back_button, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        self.setLayout(layout)
+
+    def open_question_list(self, chapter_name):
+        """Opens the question list for the selected chapter."""
+        self.stack_widget.setCurrentIndex(5)  # Assume 5 is the index for QuestionListWidget
+        self.stack_widget.widget(5).load_questions(chapter_name)
+
+
+class MathsWidget(QWidget):
+    def __init__(self, stack_widget):
+        super().__init__()
+        self.stack_widget = stack_widget  # Store stack reference
+
+        # Main layout
+        layout = QVBoxLayout(self)
+        layout.setSpacing(15)
+        layout.setContentsMargins(40, 20, 40, 20)
+
+        # Title and Caption Labels
+        title_label = QLabel("📐 Maths Chapters")
+        caption_label = QLabel("29 Chapters | 14 11th | 15 12th")
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        caption_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title_label.setFont(QFont("Poppins", 24, QFont.Weight.Bold))
+        caption_label.setFont(QFont("Poppins", 14, QFont.Weight.DemiBold))
+        title_label.setStyleSheet("color: #ffffff; padding: 10px;")
+        caption_label.setStyleSheet("color: #ffffff; padding: 10px;")
+        layout.addWidget(title_label)
+        layout.addWidget(caption_label)
+
+        # Scrollable List
+        scroll_area = QScrollArea(self)
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setStyleSheet("border: none; background: transparent;")
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+
+        scroll_widget = QWidget()
+        scroll_layout = QVBoxLayout(scroll_widget)
+        scroll_layout.setSpacing(10)
+
+        # Maths Chapters (Class 11 & 12)
+        chapters = [
+            # Class 11
+            "➕ Sets", "➗ Relations and Functions", "📉 Trigonometric Functions",
+            "🛤️ Principle of Mathematical Induction", "♾️ Complex Numbers and Quadratic Equations",
+            "📈 Linear Inequalities", "➗ Permutations and Combinations", "📊 Binomial Theorem",
+            "📐 Sequences and Series", "➕ Straight Lines", "📏 Conic Sections",
+            "🌀 Introduction to Three-dimensional Geometry",
+            "📊 Limits and Derivatives", "📊 Mathematical Reasoning", "📐 Statistics", "🎲 Probability",
+
+            # Class 12
+            "🔗 Relations and Functions", "📈 Inverse Trigonometric Functions", "🔀 Matrices",
+            "➕ Determinants", "📏 Continuity and Differentiability", "📉 Applications of Derivatives",
+            "📊 Integrals", "📈 Applications of Integrals", "📊 Differential Equations", "📏 Vectors",
+            "📐 Three-dimensional Geometry", "🔢 Linear Programming", "🎲 Probability"
+        ]
+
+        # Add chapter buttons
+        for chapter in chapters:
+            chapter_button = QPushButton(chapter)
+            chapter_button.setFixedHeight(60)
+            chapter_button.setFont(QFont("Poppins", 14, QFont.Weight.Medium))
+            chapter_button.setStyleSheet("""
+                QPushButton {
+                    background-color: #222d3f;
+                    color: white;
+                    border-radius: 15px;
+                    padding: 10px;
+                    text-align: left;
+                }
+                QPushButton:hover {
+                    background-color: #007BFF;
+                    color: white;
+                }
+            """)
+            scroll_layout.addWidget(chapter_button)
+
+        scroll_widget.setLayout(scroll_layout)
+        scroll_area.setWidget(scroll_widget)
+        layout.addWidget(scroll_area)
+
+        # Back Button
+        back_button = QPushButton("⬅️ Back to KEAM", self)
+        back_button.setFixedSize(QSize(200, 50))
+        back_button.setFont(QFont("Poppins", 12, QFont.Weight.Bold))
+        back_button.setStyleSheet("""
+            QPushButton {
+                background-color: #222d3f;
+                color: white;
+                border-radius: 10px;
+                padding: 10px;
+            }
+            QPushButton:hover {
+                border: 2px solid #007BFF;
+            }
+        """)
+        back_button.clicked.connect(lambda: self.stack_widget.setCurrentIndex(1))  # Back to KEAM Widget
+        layout.addWidget(back_button, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        self.setLayout(layout)
+
+
+class ChemistryWidget(QWidget):
+    def __init__(self, stack_widget):
+        super().__init__()
+        self.stack_widget = stack_widget  # Store stack reference
+
+        # Main layout
+        layout = QVBoxLayout(self)
+        layout.setSpacing(15)
+        layout.setContentsMargins(40, 20, 40, 20)
+
+        # Title and Caption Labels
+        title_label = QLabel("🧪 Chemistry Chapters")
+        caption_label = QLabel("19 Chapters | 9 11th | 10 12th")
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        caption_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title_label.setFont(QFont("Poppins", 24, QFont.Weight.Bold))
+        caption_label.setFont(QFont("Poppins", 14, QFont.Weight.DemiBold))
+        title_label.setStyleSheet("color: #ffffff; padding: 10px;")
+        caption_label.setStyleSheet("color: #ffffff; padding: 10px;")
+        layout.addWidget(title_label)
+        layout.addWidget(caption_label)
+
+        # Scrollable List
+        scroll_area = QScrollArea(self)
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setStyleSheet("border: none; background: transparent;")
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+
+        scroll_widget = QWidget()
+        scroll_layout = QVBoxLayout(scroll_widget)
+        scroll_layout.setSpacing(10)
+
+        # Chemistry Chapters (Class 11 & 12, avoiding deleted ones)
+        chapters = [
+            # Class 11
+            "🧪 Some Basic Concepts of Chemistry", "⚖️ Structure of Atom",
+            "🔗 Classification of Elements and Periodicity",
+            "⚛️ Chemical Bonding and Molecular Structure", "🌡️ States of Matter", "🧪 Thermodynamics",
+            "🔁 Equilibrium", "⚡ Redox Reactions", "🧫 Hydrogen",
+            "🧱 The s-Block Elements (Alkali and Alkaline Earth Metals)",
+            "🔬 Some p-Block Elements", "🛠️ Organic Chemistry – Some Basic Principles and Techniques",
+            "🧪 Hydrocarbons", "🔄 Environmental Chemistry",
+
+            # Class 12
+            "💎 Solid State", "💧 Solutions", "⚡ Electrochemistry", "🔥 Chemical Kinetics", "♨️ Surface Chemistry",
+            "🧬 General Principles and Processes of Isolation of Elements", "🔬 The p-Block Elements",
+            "🧲 The d- and f-Block Elements", "🧪 Coordination Compounds", "🧑‍🔬 Haloalkanes and Haloarenes",
+            "🧪 Alcohols, Phenols and Ethers", "🧬 Aldehydes, Ketones and Carboxylic Acids",
+            "🧫 Organic Compounds Containing Nitrogen", "🩺 Biomolecules, Polymers and Chemistry in Everyday Life"
+        ]
+
+        # Add chapter buttons
+        for chapter in chapters:
+            chapter_button = QPushButton(chapter)
+            chapter_button.setFixedHeight(60)
+            chapter_button.setFont(QFont("Poppins", 14, QFont.Weight.Medium))
+            chapter_button.setStyleSheet("""
+                QPushButton {
+                    background-color: #222d3f;
+                    color: white;
+                    border-radius: 15px;
+                    padding: 10px;
+                    text-align: left;
+                }
+                QPushButton:hover {
+                    background-color: #007BFF;
+                    color: white;
+                }
+            """)
+            scroll_layout.addWidget(chapter_button)
+
+        scroll_widget.setLayout(scroll_layout)
+        scroll_area.setWidget(scroll_widget)
+        layout.addWidget(scroll_area)
+
+        # Back Button
+        back_button = QPushButton("⬅️ Back to KEAM", self)
+        back_button.setFixedSize(QSize(200, 50))
+        back_button.setFont(QFont("Poppins", 12, QFont.Weight.Bold))
+        back_button.setStyleSheet("""
+            QPushButton {
+                background-color: #222d3f;
+                color: white;
+                border-radius: 10px;
+                padding: 10px;
+            }
+            QPushButton:hover {
+                border: 2px solid #007BFF;
+            }
+        """)
+        back_button.clicked.connect(lambda: self.stack_widget.setCurrentIndex(1))  # Back to KEAM Widget
+        layout.addWidget(back_button, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        self.setLayout(layout)
+
+
+class KeamContentWidget(QWidget):
+    def __init__(self, stack_widget, go_back_callback):
+        """
+        A widget displaying KEAM content with subject buttons to switch pages.
+
+        :param stack_widget: The QStackedWidget instance to switch pages.
         :param go_back_callback: Function to call when the back button is clicked.
         """
         super().__init__()
 
+        self.stack_widget = stack_widget  # Store the QStackedWidget reference
+
         # Layout setup
         self.layout = QVBoxLayout(self)
         self.layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.layout.setSpacing(80)
 
-        # KEAM Content Label
-        keam_label = QLabel("Welcome to KEAM Content!", self)
-        keam_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        keam_label.setFont(QFont("Poppins", 18, QFont.Weight.Bold))
-        keam_label.setStyleSheet("color: white;")
-        self.layout.addWidget(keam_label)
+        self.greeting_bar = QWidget()
+        self.greeting_bar.setStyleSheet("background-color: #1a1a1a;")
+        self.greeting_bar.setFixedHeight(140)
+        self.greeting_bar_layout = QVBoxLayout(self.greeting_bar)
+        self.greeting_bar_layout.addStretch()
+        self.greeting_bar_layout.addSpacing(5)
+        self.greeting_bar_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.title_label = LargeTitleLabel("Kerala Engineering, Architecture, and Medical (KEAM)")
+        self.title_label.setFont(QFont("Helvetica", 33, QFont.Weight.DemiBold))
+        self.title_label.setStyleSheet("color: #ffffff;")
+
+        self.field_caption = CaptionLabel("2019-2024  |  19 Papers")
+        self.field_caption.setFont(QFont("Poppins", 12, QFont.Weight.Bold))
+
+        self.greeting_bar_layout.addWidget(self.title_label, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.greeting_bar_layout.addWidget(self.field_caption, alignment=Qt.AlignmentFlag.AlignHCenter)
+
+        self.layout.addWidget(self.greeting_bar)
+
+        # Subject Buttons
+        self.physics_button = self.create_card_button(QIcon("resources/icons/icon/phy_button.png"),
+                                                      self.show_physics_page)
+        self.chemistry_button = self.create_card_button(QIcon("resources/icons/icon/chem_button.png"),
+                                                        self.show_chemistry_page)
+        self.maths_button = self.create_card_button(QIcon("resources/icons/icon/math_button.png"), self.show_maths_page)
+
+        self.layout.addWidget(self.physics_button, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout.addWidget(self.chemistry_button, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout.addWidget(self.maths_button, alignment=Qt.AlignmentFlag.AlignCenter)
 
         # Back Button
         back_button = QPushButton("Back to Home", self)
@@ -98,6 +644,38 @@ class KeamContentWidget(QWidget):
         back_button.clicked.connect(go_back_callback)
         self.layout.addWidget(back_button, alignment=Qt.AlignmentFlag.AlignBottom)
 
+    def create_card_button(self, icon, function):
+        """Creates a rounded rectangular card-like button for subjects."""
+        button = QPushButton()
+        button.clicked.connect(function)  # Connect button click to function
+        button.setFixedSize(QSize(1000, 180))
+        button.setIcon(QIcon(icon))
+        button.setIconSize(QSize(1000, 180))
+        button.setStyleSheet("""
+            QPushButton {
+                background: none;
+                border-radius: 39px;
+                padding: 10px;
+                border: none;
+            }
+            QPushButton:hover {
+                border: 2px solid #007BFF; /* Blue border on hover */
+            }
+        """)
+        return button
+
+    def show_physics_page(self):
+        """Switch to the Physics page in QStackedWidget."""
+        self.stack_widget.setCurrentIndex(2)  # Change this index based on actual positioning
+
+    def show_chemistry_page(self):
+        """Switch to the Chemistry page in QStackedWidget."""
+        self.stack_widget.setCurrentIndex(3)  # Change this index based on actual positioning
+
+    def show_maths_page(self):
+        """Switch to the Maths page in QStackedWidget."""
+        self.stack_widget.setCurrentIndex(4)  # Change this index based on actual positioning
+
 
 class DashboardWidget(QWidget):
     def __init__(self, parent=None):
@@ -110,10 +688,10 @@ class DashboardWidget(QWidget):
         # Set gradient background
         palette = QPalette()
         gradient = QLinearGradient(0, 0, 0, self.height())
-        gradient.setColorAt(0.0, QColor("#272727"))
-        gradient.setColorAt(1.0, QColor("#272727"))
-        gradient.setColorAt(2.0, QColor("#202027"))
-        gradient.setColorAt(3.0, QColor("#202020"))
+        gradient.setColorAt(0.0, QColor("#191919"))
+        gradient.setColorAt(1.0, QColor("#1d1d1d"))
+        # gradient.setColorAt(2.0, QColor("#2D3436"))
+        # gradient.setColorAt(3.0, QColor("#202020"))
 
         palette.setBrush(QPalette.ColorRole.Window, QBrush(gradient))
         self.setPalette(palette)
@@ -125,14 +703,14 @@ class DashboardWidget(QWidget):
 
         # ======== Greeting Bar (Fixed) ========
         self.greeting_bar = QWidget()
-        self.greeting_bar.setStyleSheet("background-color: #272727;")
+        self.greeting_bar.setStyleSheet("background-color: #1a1a1a;")
         self.greeting_bar.setFixedHeight(120)
         self.greeting_bar_layout = QVBoxLayout(self.greeting_bar)
         self.greeting_bar_layout.setContentsMargins(0, 0, 0, 0)
 
         self.title_label = LargeTitleLabel(f"👋 Hey, {name}")
         self.title_label.setFont(QFont("Poppins", 35, QFont.Weight.DemiBold))
-        self.title_label.setStyleSheet("color: #ffffff;")
+        self.title_label.setStyleSheet("color: #ffffff; background-color: #1a1a1a;")
 
         caption_emoji = ""
         if _config["field"] == "Engineering":
@@ -411,28 +989,54 @@ class StackableWidget(QWidget):
         self.setObjectName("testhome")
 
         # Create pages
-        self.page1 = QWidget()
+        self.home_widget = QWidget()
         self.page2 = QWidget()
+        self.keam_phy = QWidget()
+        self.keam_chem = QWidget()
+        self.keam_math = QWidget()
 
         # Page 1 layout
         layout1 = QVBoxLayout()
         self.home = DashboardWidget(self)
         layout1.addWidget(self.home)
-        self.page1.setLayout(layout1)
+        self.home_widget.setLayout(layout1)
 
         # Page 2 layout
         layout2 = QVBoxLayout()
-        layout2.addWidget(QLabel("This is Page 2"))
-        self.keam_widget = KeamContentWidget(self.go_back)
-        btn_to_page1 = QPushButton("Go to Page 1")
-        btn_to_page1.clicked.connect(self.go_back)
-        layout2.addWidget(self.keam_widget)
-        layout2.addWidget(btn_to_page1)
+        layout2.addStretch(1)
+        self.keam_widget = KeamContentWidget(self.stacked_widget, self.go_back)
+        layout2.addWidget(self.keam_widget, Qt.AlignmentFlag.AlignTop)
         self.page2.setLayout(layout2)
 
+        layout3 = QVBoxLayout()
+        layout3.addStretch(1)
+        self.keam_phy_widget = PhysicsWidget(self.stacked_widget)
+        layout3.addWidget(self.keam_phy_widget, Qt.AlignmentFlag.AlignTop)
+        self.keam_phy.setLayout(layout3)
+
+        layout4 = QVBoxLayout()
+        layout4.addStretch(1)
+        self.keam_chem_widget = ChemistryWidget(self.stacked_widget)
+        layout4.addWidget(self.keam_chem_widget, Qt.AlignmentFlag.AlignTop)
+        self.keam_phy.setLayout(layout4)
+
+        layout5 = QVBoxLayout()
+        layout5.addStretch(1)
+        self.keam_math_widget = MathsWidget(self.stacked_widget)
+        layout5.addWidget(self.keam_math_widget, Qt.AlignmentFlag.AlignTop)
+        self.keam_phy.setLayout(layout5)
+
         # Add pages to stacked widget
-        self.stacked_widget.addWidget(self.page1)
+        self.stacked_widget.addWidget(self.home_widget)
         self.stacked_widget.addWidget(self.page2)
+        self.stacked_widget.addWidget(self.keam_phy_widget)
+        self.stacked_widget.addWidget(self.keam_chem_widget)
+        self.stacked_widget.addWidget(self.keam_math_widget)
+        self.stacked_widget.addWidget(QuestionListWidget(self.stacked_widget))
+        self.stacked_widget.addWidget(QuizWidget(self.stacked_widget))
+
+        for i in range(self.stacked_widget.count()):
+            print(f"Index {i}: {self.stacked_widget.widget(i).__class__.__name__}")
 
         self.layout.addWidget(self.stacked_widget)
         self.setLayout(self.layout)
