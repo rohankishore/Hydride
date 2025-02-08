@@ -1,7 +1,7 @@
 <!-- PROJECT LOGO -->
 <div align="center">
 
-![banner (1)](https://github.com/user-attachments/assets/b80c3ebc-78ca-4261-9ee9-7e994f6ccfc3)
+![Group 3](https://github.com/user-attachments/assets/044ea38e-98fd-41a5-9497-b7d3dd0aca3a)
 
   <a style="text-decoration:none">
     <img src="https://img.shields.io/github/downloads/rohankishore/Hydride/total.svg"/>
