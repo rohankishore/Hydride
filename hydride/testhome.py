@@ -1,11 +1,11 @@
 import json
 import os
 
-from PyQt6.QtCore import Qt, QSize, QTimer
+from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QFont, QLinearGradient, QColor, QPalette, QBrush, QIcon
 from PyQt6.QtWidgets import (
-    QHBoxLayout, QVBoxLayout, QWidget, QPushButton, QSpacerItem, QSizePolicy,
-    QScrollArea, QLabel
+    QHBoxLayout, QWidget, QPushButton, QSpacerItem, QSizePolicy,
+    QScrollArea
 )
 from PyQt6.QtWidgets import (
     QStackedWidget, QListWidget
@@ -75,7 +75,26 @@ class QuestionListWidget(QWidget):
         self.title_label.setStyleSheet("color: #ffffff; padding: 10px;")
         layout.addWidget(self.title_label)
 
+        back_button = QPushButton("⬅️ Back to Chapters", self)
+        back_button.setFixedSize(QSize(200, 50))
+        back_button.setFont(QFont("Poppins", 12, QFont.Weight.Bold))
+        back_button.setStyleSheet("""
+                    QPushButton {
+                        background-color: #222d3f;
+                        color: white;
+                        border-radius: 10px;
+                        padding: 10px;
+                    }
+                    QPushButton:hover {
+                        border: 2px solid #007BFF;
+                    }
+                """)
+        back_button.clicked.connect(lambda: self.stack_widget.setCurrentIndex(2))
+        layout.addWidget(back_button, alignment=Qt.AlignmentFlag.AlignCenter)
+
+
         self.list_widget = QListWidget()
+        self.list_widget.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.list_widget.setStyleSheet("""
             QListWidget {
                 background-color: #222d3f;
@@ -97,7 +116,7 @@ class QuestionListWidget(QWidget):
 
     def load_questions(self, chapter_name):
         """Loads questions from the JSON file and updates QuizWidget."""
-        filename = f"resources/chapters/{chapter_name.replace(' ', '_')}.json"
+        filename = f"resources/chapters/keam/{chapter_name.replace(' ', '_')}.json"
         print(f"Loading questions from: {filename}")
 
         try:
@@ -148,6 +167,10 @@ class QuestionListWidget(QWidget):
             print("Error opening quiz:", e)
 
 
+from PyQt6.QtGui import QPixmap
+from PyQt6.QtWidgets import QLabel, QVBoxLayout, QListWidgetItem
+import requests
+
 class QuizWidget(QWidget):
     def __init__(self, stack_widget):
         super().__init__()
@@ -169,6 +192,27 @@ class QuizWidget(QWidget):
         self.question_label.setTextFormat(Qt.TextFormat.RichText)
         layout.addWidget(self.question_label)
 
+        # ✅ **Fix: Define `self.question_image`**
+        self.question_image = QLabel()
+        self.question_image.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.question_image.hide()  # Hide initially
+        layout.addWidget(self.question_image)
+
+        # Explanation Label (Hidden Initially)
+        self.explanation_label = QLabel()
+        self.explanation_label.setWordWrap(True)
+        self.explanation_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.explanation_label.setFont(QFont("Poppins", 12, QFont.Weight.Medium))
+        self.explanation_label.setStyleSheet("color: white; padding: 5px;")
+        self.explanation_label.hide()
+        layout.addWidget(self.explanation_label)
+
+        # Explanation Image (Hidden Initially)
+        self.explanation_image = QLabel()
+        self.explanation_image.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.explanation_image.hide()
+        layout.addWidget(self.explanation_image)
+
         # Options List
         self.option_list = QListWidget()
         self.option_list.setStyleSheet("""
@@ -185,17 +229,8 @@ class QuizWidget(QWidget):
                 background-color: #007BFF;
             }
         """)
-
         self.option_list.itemClicked.connect(self.store_selected_option)
         layout.addWidget(self.option_list)
-
-        # Feedback Label
-        self.feedback_label = QLabel("")
-        self.feedback_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.feedback_label.setFont(QFont("Poppins", 12, QFont.Weight.Medium))
-        self.feedback_label.setStyleSheet("color: white; padding: 5px;")
-        self.feedback_label.setFixedHeight(40)  # Ensure visibility
-        layout.addWidget(self.feedback_label)
 
         # Navigation Buttons
         nav_layout = QHBoxLayout()
@@ -209,29 +244,7 @@ class QuizWidget(QWidget):
         nav_layout.addWidget(self.next_button)
         layout.addLayout(nav_layout)
 
-        # 🔥 Back to Chapter Selection Button
-        self.back_button = QPushButton("🔙 Back")
-        self.back_button.setFixedSize(QSize(250, 50))
-        self.back_button.setFont(QFont("Poppins", 12, QFont.Weight.Bold))
-        self.back_button.setStyleSheet("""
-            QPushButton {
-                background-color: #222d3f;
-                color: white;
-                border-radius: 10px;
-                padding: 10px;
-            }
-            QPushButton:hover {
-                border: 2px solid #007BFF;
-            }
-        """)
-        self.back_button.clicked.connect(self.go_back_to_chapters)
-        layout.addWidget(self.back_button, alignment=Qt.AlignmentFlag.AlignCenter)
-
         self.setLayout(layout)
-
-    def go_back_to_chapters(self):
-        """Returns to the chapter selection screen."""
-        self.stack_widget.setCurrentIndex(5)  # Ensure 5 is the QuestionListWidget index
 
     def store_selected_option(self, item):
         """Stores the selected option."""
@@ -239,64 +252,117 @@ class QuizWidget(QWidget):
         print(f"Selected answer: {self.selected_option}")  # Debugging
 
     def check_answer_and_next(self):
-        """First click shows answer feedback, second click moves to the next question."""
+        """First click shows answer feedback, second click shows explanation (if any), third click moves to the next question."""
         if not self.questions:
             return
 
-        correct_answers = self.questions[self.current_question_index]["correct_options"]
+        question_data = self.questions[self.current_question_index]
+        correct_answers = question_data["correct_options"]
 
-        # Step 1: Show feedback if not already shown
-        if self.feedback_label.text() == "":
+        # Step 1: Show answer feedback
+        if self.explanation_label.isHidden():  # Means feedback not shown yet
             if self.selected_option:  # Only show feedback if an option was chosen
                 if self.selected_option in correct_answers:
-                    self.feedback_label.setText("✅ Correct!")
-                    self.feedback_label.setStyleSheet("color: #00FF00; padding: 5px;")
+                    self.explanation_label.setText("✅ Correct!")
+                    self.explanation_label.setStyleSheet("color: #00FF00; padding: 5px;")
                 else:
                     correct_text = ", ".join(correct_answers) if correct_answers else "None"
-                    self.feedback_label.setText(f"❌ Incorrect! Correct answer: {correct_text}")
-                    self.feedback_label.setStyleSheet("color: #FF4444; padding: 5px;")
+                    self.explanation_label.setText(f"❌ Incorrect! Correct answer: {correct_text}")
+                    self.explanation_label.setStyleSheet("color: #FF4444; padding: 5px;")
+            self.explanation_label.show()
+            return  # Stops execution here
 
-            return  # Stops here to allow feedback before moving forward
+        # Step 2: Show explanation (if available)
+        if self.explanation_label.text() != "" and question_data.get("explanation"):
+            explanation_data = question_data["explanation"]
+            if isinstance(explanation_data, dict):
+                explanation_text = explanation_data.get("content", "")
+                explanation_image = explanation_data.get("image", "")
 
-        # Step 2: Move to the next question on second click
-        self.feedback_label.setText("")  # Reset feedback
+                if explanation_text:
+                    self.explanation_label.setText(f"📌 Explanation: {explanation_text}")
+
+                if explanation_image:
+                    self.load_image(self.explanation_image, explanation_image)
+            return  # Stops execution to show explanation before moving to next question
+
+        # Step 3: Move to next question
+        self.explanation_label.setText("")
+        self.explanation_label.hide()
+        self.explanation_image.hide()
         if self.current_question_index < len(self.questions) - 1:
             self.next_question()
 
+    def previous_question(self):
+        """Moves to the previous question."""
+        if self.current_question_index > 0:
+            self.current_question_index -= 1
+            self.load_question(self.current_question_index)
+
+    def next_question(self):
+        """Moves to the next question."""
+        if self.current_question_index < len(self.questions) - 1:
+            self.current_question_index += 1
+            self.load_question(self.current_question_index)
+
     def load_question(self, index):
-        """Loads a question based on the index."""
+        """Loads a question and displays an image if available."""
         if not self.questions:
+            self.question_label.hide()
             self.question_label.setText("No questions available.")
             return
 
         self.current_question_index = index
         question_data = self.questions[self.current_question_index]
 
-        formatted_question = question_data["content"].replace("$", "<sup>").replace("$", "</sup>")
-        self.question_label.setText(formatted_question)
+        # Handle question text (Hide if empty)
+        if "content" in question_data and question_data["content"].strip():
+            formatted_question = question_data["content"].replace("$", "<sup>").replace("$", "</sup>")
+            self.question_label.setText(formatted_question)
+            self.question_label.show()
+        else:
+            self.question_label.hide()
 
+        # Handle question image (Larger Size)
+        if "image" in question_data and question_data["image"].strip():
+            self.load_image(self.question_image, question_data["image"])
+        else:
+            self.question_image.hide()
+
+        # Load options
         self.option_list.clear()
         self.selected_option = None  # Reset selection
+
         for option in question_data["options"]:
-            formatted_option = f"{option['identifier']}. {option['content']}".replace("$", "<sup>").replace("$",
-                                                                                                            "</sup>")
-            self.option_list.addItem(formatted_option)
+            item = QListWidgetItem(f"{option['identifier']}. {option['content']}")
+            self.option_list.addItem(item)
 
-        self.feedback_label.setText("")  # Reset feedback
+            # Handle option image
+            if "image" in option and option["image"].strip():
+                image_label = QLabel()
+                self.load_image(image_label, option["image"])
+                self.option_list.setItemWidget(item, image_label)
 
-        # 🔥 Keep Next button enabled even on the last question
-        self.prev_button.setEnabled(self.current_question_index > 0)
-        self.next_button.setEnabled(True)  # Always enabled to allow skipping
+    def load_image(self, label, url, wsize=500, hsize=600):
+        """Loads and displays an image from a URL (e.g., GitHub raw file)."""
+        try:
+            print(f"🔍 Loading image from: {url}")  # Debug print
 
-    def next_question(self):
-        """Moves to the next question."""
-        if self.current_question_index < len(self.questions) - 1:
-            self.load_question(self.current_question_index + 1)
+            response = requests.get(url)
+            response.raise_for_status()  # Raise an error for bad responses
 
-    def previous_question(self):
-        """Moves to the previous question."""
-        if self.current_question_index > 0:
-            self.load_question(self.current_question_index - 1)
+            pixmap = QPixmap()
+            if pixmap.loadFromData(response.content):
+                label.setPixmap(pixmap.scaled(wsize, hsize, Qt.AspectRatioMode.KeepAspectRatio))
+                label.show()
+                print("✅ Image loaded successfully!")
+            else:
+                print("❌ Failed to load image into QPixmap")
+                label.hide()
+
+        except Exception as e:
+            print(f"❌ Error loading image from {url}: {e}")
+            label.hide()
 
 
 class PhysicsWidget(QWidget):
@@ -616,11 +682,11 @@ class KeamContentWidget(QWidget):
         self.layout.addWidget(self.greeting_bar)
 
         # Subject Buttons
-        self.physics_button = self.create_card_button(QIcon("resources/icons/icon/phy_button.png"),
+        self.physics_button = self.create_card_button(QIcon("resources/icons/icon/phy_sub_button.png"),
                                                       self.show_physics_page)
-        self.chemistry_button = self.create_card_button(QIcon("resources/icons/icon/chem_button.png"),
+        self.chemistry_button = self.create_card_button(QIcon("resources/icons/icon/chem_sub_button.png"),
                                                         self.show_chemistry_page)
-        self.maths_button = self.create_card_button(QIcon("resources/icons/icon/math_button.png"), self.show_maths_page)
+        self.maths_button = self.create_card_button(QIcon("resources/icons/icon/math_sub_button.png"), self.show_maths_page)
 
         self.layout.addWidget(self.physics_button, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout.addWidget(self.chemistry_button, alignment=Qt.AlignmentFlag.AlignCenter)
@@ -648,13 +714,13 @@ class KeamContentWidget(QWidget):
         """Creates a rounded rectangular card-like button for subjects."""
         button = QPushButton()
         button.clicked.connect(function)  # Connect button click to function
-        button.setFixedSize(QSize(1000, 180))
+        button.setFixedSize(QSize(805, 188))
         button.setIcon(QIcon(icon))
         button.setIconSize(QSize(1000, 180))
         button.setStyleSheet("""
             QPushButton {
                 background: none;
-                border-radius: 39px;
+                border-radius: 45px;
                 padding: 10px;
                 border: none;
             }

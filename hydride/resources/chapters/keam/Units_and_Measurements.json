@@ -1,0 +1,244 @@
+[
+    {
+        "exam": "KEAM",
+        "year": 2024,
+        "marks": 4,
+        "negMarks": -1,
+        "subject": "Physics",
+        "chapter": "Units and Dimensions",
+        "shift": "2024",
+        "type": "mcq",
+        "question": {
+            "content": "",
+            "image": "https://github.com/HydrideApp/HydrideQuestionData/blob/main/exams/keam/phy/u&d/411295816-81d6df3e-ed3c-4684-a9f8-8a5ece3bb6fd.png?raw=true",
+            "options": [
+                {
+                    "identifier": "A",
+                    "content": "1, 3, -2"
+                },
+                {
+                    "identifier": "B",
+                    "content": "-1, 3, 2"},
+                {
+                    "identifier": "C",
+                    "content": "-1, 3, -2"
+                },
+                {
+                    "identifier": "D",
+                    "content": "1, -3, 2"
+                },
+                {
+                    "identifier": "E",
+                    "content": "1, -3, -2"
+                }
+            ],
+            "correct_options": ["C"],
+            "explanation": null
+        }
+    },
+    {
+        "exam": "KEAM",
+        "year": 2024,
+        "marks": 4,
+        "negMarks": -1,
+        "subject": "Physics",
+        "chapter": "Units and Dimensions",
+        "shift": "2024",
+        "type": "mcq",
+        "question": {
+            "content": "If the period T of a satellite revolving close to the earth is given as \\(T = 2\\pi R^a g^b \\), then the value of a and b are respectively (R — Radius of the earth)-",
+            "options": [
+                {
+                    "identifier": "A",
+                    "content": "1/2 and 5/2"
+                },
+                {
+                    "identifier": "B",
+                    "content": "1/2 and -1/2"
+                },
+                {
+                    "identifier": "C",
+                    "content": "1/2 and 1/2"
+                },
+                {
+                    "identifier": "D",
+                    "content": "3/2 and -1/2"
+                },
+                {
+                    "identifier": "E",
+                    "content": "-1/2 and 1/2"
+                }
+            ],
+            "correct_options": ["B"],
+            "explanation": null
+        }
+    },
+    {
+        "exam": "KEAM",
+        "year": 2024,
+        "marks": 4,
+        "negMarks": -1,
+        "subject": "Physics",
+        "chapter": "Units and Dimensions",
+        "shift": "2024",
+        "type": "mcq",
+        "question": {
+            "content": "Choose the INCORRECT dimensions:",
+            "options": [
+                {
+                    "identifier": "A",
+                    "content": "Linear momentum: \\(MLT^{-1} \\)"
+                },
+                {
+                    "identifier": "B",
+                    "content": "Angular momentum: \\(ML^2T^{-1}\\)"
+                },
+                {
+                    "identifier": "C",
+                    "content": "Speed of Light: \\(M^0LT^{-2}\\)"
+                },
+                {
+                    "identifier": "D",
+                    "content": "Kinetic energy: \\(ML^2T^{-2}\\)"
+                },
+                {
+                    "identifier": "E",
+                    "content": "Angular frequency: \\(M^0L^0T^{-1}\\)"
+                }
+            ],
+            "correct_options": [""],
+            "explanation": "test"
+        }
+    },
+    {
+        "exam": "KEAM",
+        "year": 2024,
+        "marks": 4,
+        "negMarks": -1,
+        "subject": "Physics",
+        "chapter": "Units and Dimensions",
+        "shift": "2024",
+        "type": "mcq"
+    },
+    {
+        "exam": "KEAM",
+        "year": 2024,
+        "marks": 4,
+        "negMarks": -1,
+        "subject": "Physics",
+        "chapter": "Units and Dimensions",
+        "shift": "2024",
+        "type": "mcq",
+        "question": {
+            "content": "In the travelling plane wave equation given by \\( y = A \\sin(w ((x/v) - t)) \\) where \\(w\\) is the angular velocity and v is the linear velocity. The dimension of \\(wt\\) is:",
+            "options": [
+                {
+                    "identifier": "A",
+                    "content": "\\(LM^0T^1 \\)"
+                },
+                {
+                    "identifier": "B",
+                    "content": "\\(L^0M^0T^0 \\)"
+                },
+                {
+                    "identifier": "C",
+                    "content": "\\(L^0M^0T \\)"
+                },
+                {
+                    "identifier": "D",
+                    "content": "\\(LMT \\)"
+                },
+                {
+                    "identifier": "E",
+                    "content": "\\(LMT^{-2}\\)"
+                }
+            ],
+            "correct_options": ["B"],
+            "explanation": null
+        }
+    },
+
+    {
+        "exam": "KEAM",
+        "year": 2023,
+        "marks": 4,
+        "negMarks": -1,
+        "subject": "Physics",
+        "chapter": "Units and Dimensions",
+        "shift": "Morning",
+        "type": "mcq",
+        "question": {
+            "content": "A simple pendulum experiment is performed for the value of 'g, the acceleration due to the Earth's gravity. The measured value of length of the pendulum is 25 cm with an accuracy of 1 mm and the measured time for 100 oscillations is found to be 100 sec with an accuracy of 1 sec. The percentage uncertainty in the determination of g' is:",
+            "options": [
+                {
+                    "identifier": "A",
+                    "content": "9.8"
+                },
+                {
+                    "identifier": "B",
+                    "content": "0.98"
+                },
+                {
+                    "identifier": "C",
+                    "content": "4.8"
+                },
+                {
+                    "identifier": "D",
+                    "content": "2.4"
+                },
+                {
+                    "identifier": "E",
+                    "content": "1.4"
+                }
+            ],
+            "correct_options": [
+                "D"
+            ],
+            "explanation": {
+                "image": "\\"
+            }
+        }
+    },
+    {
+        "exam": "KEAM",
+        "year": 2023,
+        "marks": 4,
+        "negMarks": -1,
+        "subject": "Physics",
+        "chapter": "Units and Dimensions",
+        "shift": "Morning",
+        "type": "mcq",
+        "question": {
+            "content": "Suppose a force is given by the expression = k x ^ 2 ; where x has the dimension of length. The dimension\u00a0of\u00a0k\u00a0is",
+            "image": null,
+            "options": [
+                {
+                    "identifier": "A",
+                    "content": "ML^-1 T^-1"
+                },
+                {
+                    "identifier": "B",
+                    "content": "MLT^-1"
+                },
+                {
+                    "identifier": "C",
+                    "content": "MT^-2"
+                },
+                {
+                    "identifier": "D",
+                    "content": "M^1L^-1 T"},
+                {
+                    "identifier": "E",
+                    "content": "ML^-1 T^-2"}
+            ],
+            "correct_options": [
+                "E"
+            ],
+            "explanation": {
+                "image": "https://github.com/HydrideApp/HydrideQuestionData/blob/main/exams/keam/phy/u%26d/1840719_1813729_ans_7cef12678c02411082d53ce99089d910.jpg"
+            }
+        }
+    }
+
+]
+
